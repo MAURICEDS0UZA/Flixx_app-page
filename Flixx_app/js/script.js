@@ -1,5 +1,15 @@
 const global = {
   currentPage: window.location.pathname,
+  search: {
+    term: '',
+    type: '',
+    page: 1,
+    totalPages: 1,
+  },
+  api: {
+    apiKey: '37b5ecf8c4c5e3f07e0619120925902f',
+    apiUrl: 'https://api.themoviedb.org/3/',
+  },
 };
 
 // Display 20 most popular movies
@@ -228,6 +238,22 @@ function displayBackgroundImage(type, backgroundPath) {
   }
 }
 
+// Search Movies/Shows
+async function search() {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+
+  global.search.type = urlParams.get('type');
+  global.search.term = urlParams.get('search-term');
+
+  if (global.search.term !== '' && global.search.term !== null) {
+    const results = await searchAPIData();
+    console.log(results);
+  } else {
+    showAlert('Please enter a search term');
+  }
+}
+
 // Display Slider Movies
 async function displaySlider() {
   const { results } = await fetchAPIData('movie/now_playing');
@@ -274,11 +300,12 @@ function initSwiper() {
     },
   });
 }
+
 // Fetch data from TMDB API
 async function fetchAPIData(endpoint) {
 
-  const API_KEY = '37b5ecf8c4c5e3f07e0619120925902f';
-  const API_URL = 'https://api.themoviedb.org/3/';
+  const API_KEY = global.api.apiKey;
+  const API_URL = global.api.apiUrl;
 
   showSpinner();
 
@@ -291,6 +318,34 @@ async function fetchAPIData(endpoint) {
   hideSpinner();
 
   return data;
+}
+
+// Make Request To Search
+async function searchAPIData() {
+  const API_KEY = global.api.apiKey;
+  const API_URL = global.api.apiUrl;
+
+  showSpinner();
+
+  const response = await fetch(
+    `${API_URL}search/${global.search.type}?api_key=${API_KEY}&language=en-US&query=${global.search.term}`
+  );
+
+  const data = await response.json();
+
+  hideSpinner();
+
+  return data;
+}
+
+// Show Alert
+function showAlert(message, className) {
+  const alertEl = document.createElement('div');
+  alertEl.classList.add('alert', className);
+  alertEl.appendChild(document.createTextNode(message));
+  document.querySelector('#alert').appendChild(alertEl);
+
+  setTimeout(() => alertEl.remove(), 3000);
 }
 
 function showSpinner() {
@@ -320,7 +375,7 @@ function init() {
   switch (global.currentPage) {
     case '/':
     case '/index.html':
-      displaySlider()
+      displaySlider();
       displayPopularMovies();
       break;
     case '/shows.html':
@@ -333,7 +388,7 @@ function init() {
       displayShowDetails();
       break;
     case '/search.html':
-      console.log('Search');
+      search();
       break;
   }
 
